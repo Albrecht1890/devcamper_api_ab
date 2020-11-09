@@ -63,3 +63,62 @@ exports.addReview = asyncHandler(async (req, res, next) => {
     data: review
   });
 })
+
+// @desc      Update review
+// @route     PUT /api/v1/reviews/:id
+// @access    private
+exports.updateReview = asyncHandler(async (req, res, next) => {
+  let review = await Review.findById(req.params.id);
+
+
+  if (!review) {
+    return next(
+      new ErrorResponse(`Review not found with id ${req.params.id}`, 404)
+    );
+  };
+
+  // Make sure user is review owner
+  if (review.user.toString() !== req.user.id && req.user.role !== 'admin') {
+    return next(
+      new ErrorResponse(`User ${req.user.id} is not authorized update review ${review._id}`, 401)
+    );
+  }
+
+  review = await Review.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+    runValidators: true
+  })
+
+  res.status(200).json({
+    success: true,
+    updated: true,
+    data: review
+  });
+})
+
+// @desc      Delete review
+// @route     DELETE /api/v1/reviews/:id
+// @access    private
+exports.deleteReview = asyncHandler(async (req, res, next) => {
+  const review = await Review.findById(req.params.id);
+
+  if (!review) {
+    return next(
+      new ErrorResponse(`Review not found with id ${req.params.id}`, 404)
+    );
+  };
+
+  // Make sure user is course owner
+  if (review.user.toString() !== req.user.id && req.user.role !== 'admin') {
+    return next(
+      new ErrorResponse(`User ${req.user.id} is not authorized delete review ${review._id}`, 401)
+    );
+  }
+
+  await review.remove();
+
+  res.status(200).json({
+    success: true,
+    data: {}
+  });
+})
